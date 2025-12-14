@@ -1,0 +1,5 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://hse-hl-mlops-bucket/imdb-reviews
+    endpointurl = https://storage.yandexcloud.net
