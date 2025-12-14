@@ -1,0 +1,32 @@
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-case-conflict
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.9
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.7.4
+    hooks:
+      - id: prettier
+        types_or: [markdown, yaml, json, dockerfile, shell, toml, sql]
+        additional_dependencies:
+          - prettier@3.7.4
+          - prettier-plugin-sh@0.18.0
+          - prettier-plugin-toml@2.0.6
+          - prettier-plugin-sql@0.19.2
+        args: [--print-width=100, --prose-wrap=always]
