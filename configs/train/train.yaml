@@ -1,0 +1,20 @@
+split:
+  val_size: 0.2
+  random_state: 42
+  shuffle: true
+
+optimizer:
+  lr: 2e-5
+  weight_decay: 0.01
+
+bert_trainer:
+  batch_size: 32
+  max_epochs: 4
+  num_workers: 2
+  accelerator: auto
+  devices: auto
+  precision: 32
+  checkpoints_dir: checkpoints
+
+scheduler:
+  warmup_ratio: 0.1

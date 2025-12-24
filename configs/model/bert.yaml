@@ -1,0 +1,5 @@
+model_type: bert
+
+pretrained_model_name: google-bert/bert-base-uncased
+max_length: 256
+num_classes: 2

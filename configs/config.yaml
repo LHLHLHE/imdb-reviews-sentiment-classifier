@@ -1,3 +1,6 @@
 defaults:
   - data: data
+  - model: baseline
+  - train: train
+  - logging: logging
   - _self_

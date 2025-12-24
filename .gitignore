@@ -205,4 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-/data
+
+.DS_Store
+
+data/
+processed_data/
+checkpoints/
