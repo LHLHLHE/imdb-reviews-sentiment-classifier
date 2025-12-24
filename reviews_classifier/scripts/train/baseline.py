@@ -5,12 +5,10 @@ import git
 import mlflow
 import mlflow.sklearn
 from hydra import compose, initialize_config_dir
-from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
-    ConfusionMatrixDisplay,
     accuracy_score,
     f1_score,
     precision_score,
@@ -20,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
 from reviews_classifier.data import read_jsonl
+from reviews_classifier.utils import check_data_exists
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 HYDRA_CONFIG_DIR = ROOT_DIR / "configs"
@@ -37,10 +36,11 @@ def _train(cfg: DictConfig) -> None:
     logging_cfg = cfg.logging
 
     train_path = ROOT_DIR / data_cfg.preprocess.processed_train_data_path
-    if not train_path.exists():
-        raise SystemExit(
-            f"Processed training data not found: {str(train_path)}. Run `preprocess_data` first."
-        )
+    test_path = ROOT_DIR / data_cfg.preprocess.processed_test_data_path
+
+    data_exists, missing_str = check_data_exists(train_path, test_path)
+    if not data_exists:
+        raise SystemExit(f"Processed data not found: {missing_str}. Run `preprocess_data` first.")
 
     text_key = data_cfg.preprocess.text_field
     label_key = data_cfg.preprocess.label_field
@@ -85,21 +85,30 @@ def _train(cfg: DictConfig) -> None:
         y_train_pred = pipe.predict(X_train)
         y_val_pred = pipe.predict(X_val)
         metrics = {
-            "train_accuracy": accuracy_score(y_train, y_train_pred),
-            "val_accuracy": accuracy_score(y_val, y_val_pred),
-            "val_precision_neg": precision_score(y_val, y_val_pred, pos_label=1),
-            "val_recall_neg": recall_score(y_val, y_val_pred, pos_label=1),
-            "val_f1_neg": f1_score(y_val, y_val_pred, pos_label=1),
+            "train/accuracy": accuracy_score(y_train, y_train_pred),
+            "val/accuracy": accuracy_score(y_val, y_val_pred),
+            "val/precision_neg": precision_score(y_val, y_val_pred, pos_label=1),
+            "val/recall_neg": recall_score(y_val, y_val_pred, pos_label=1),
+            "val/f1_neg": f1_score(y_val, y_val_pred, pos_label=1),
         }
         mlflow.log_metrics(metrics)
 
-        mlflow.sklearn.log_model(pipe, name="tfidf_logreg_pipeline")
+        X_test, y_test = read_jsonl(test_path, text_key, label_key)
+        y_test_pred = pipe.predict(X_test)
+        test_metrics = {
+            "test/accuracy": accuracy_score(y_test, y_test_pred),
+            "test/precision_neg": precision_score(y_test, y_test_pred, pos_label=1),
+            "test/recall_neg": recall_score(y_test, y_test_pred, pos_label=1),
+            "test/f1_neg": f1_score(y_test, y_test_pred, pos_label=1),
+        }
+        mlflow.log_metrics(test_metrics)
 
-        disp = ConfusionMatrixDisplay.from_predictions(y_val, y_val_pred)
-        fig = disp.figure_
-        fig.tight_layout()
-        mlflow.log_figure(fig, "confusion_matrix.png")
-        plt.close(fig)
+        test_metrics_str = "\n\t".join(
+            f"{metric}: {value}" for metric, value in test_metrics.items()
+        )
+        print(f"Test metrics:\n\t{test_metrics_str}")
+
+        mlflow.sklearn.log_model(pipe, name="tfidf_logreg_pipeline")
 
 
 def train_baseline(overrides: list[str] | None = None) -> None:

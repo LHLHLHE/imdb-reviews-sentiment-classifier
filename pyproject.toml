@@ -27,7 +27,6 @@ extend-exclude = [".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501"]
 
 [tool.ruff.format]
 docstring-code-format = true

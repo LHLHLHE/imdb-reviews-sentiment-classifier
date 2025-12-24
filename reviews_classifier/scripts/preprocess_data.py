@@ -7,6 +7,8 @@ import fire
 from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig
 
+from reviews_classifier.utils import check_data_exists
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 HYDRA_CONFIG_DIR = ROOT_DIR / "configs"
 
@@ -58,9 +60,8 @@ def preprocess(overrides: list[str] | None = None) -> None:
     train_raw_path = ROOT_DIR / data_cfg.train_data_path
     test_raw_path = ROOT_DIR / data_cfg.test_data_path
 
-    missing = [p for p in (train_raw_path, test_raw_path) if not p.exists()]
-    if missing:
-        missing_str = ", ".join(str(p) for p in missing)
+    data_exists, missing_str = check_data_exists(train_raw_path, test_raw_path)
+    if not data_exists:
         raise SystemExit(f"Raw data not found: {missing_str}. Run `download_data_from_s3` first.")
 
     train_processed_path = ROOT_DIR / preprocess_cfg.processed_train_data_path

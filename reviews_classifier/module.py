@@ -23,10 +23,16 @@ class BertSentimentModule(L.LightningModule):
                 p.requires_grad = True
 
         self.train_acc = BinaryAccuracy()
+
         self.val_acc = BinaryAccuracy()
         self.val_precision_neg = BinaryPrecision()
         self.val_recall_neg = BinaryRecall()
         self.val_f1_neg = BinaryF1Score()
+
+        self.test_acc = BinaryAccuracy()
+        self.test_precision_neg = BinaryPrecision()
+        self.test_recall_neg = BinaryRecall()
+        self.test_f1_neg = BinaryF1Score()
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
         out = self.bert(input_ids=input_ids, attention_mask=attention_mask)
@@ -49,8 +55,8 @@ class BertSentimentModule(L.LightningModule):
         loss, probs_neg, y = self._shared_step(batch)
         accuracy = self.train_acc(probs_neg, y)
 
-        self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
-        self.log("train_accuracy", accuracy, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("train/loss", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("train/accuracy", accuracy, on_step=True, on_epoch=False, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -60,11 +66,23 @@ class BertSentimentModule(L.LightningModule):
         recall = self.val_recall_neg(probs_neg, y)
         f1 = self.val_f1_neg(probs_neg, y)
 
-        self.log("val_loss", loss, on_step=False, on_epoch=True)
-        self.log("val_accuracy", accuracy, on_step=False, on_epoch=True)
-        self.log("val_precision_neg", precision, on_step=False, on_epoch=True)
-        self.log("val_recall_neg", recall, on_step=False, on_epoch=True)
-        self.log("val_f1_neg", f1, on_step=False, on_epoch=True)
+        self.log("val/loss", loss, on_step=False, on_epoch=True)
+        self.log("val/accuracy", accuracy, on_step=False, on_epoch=True)
+        self.log("val/precision_neg", precision, on_step=False, on_epoch=True)
+        self.log("val/recall_neg", recall, on_step=False, on_epoch=True)
+        self.log("val/f1_neg", f1, on_step=False, on_epoch=True)
+
+    def test_step(self, batch, batch_idx):
+        _, probs_neg, y = self._shared_step(batch)
+        accuracy = self.test_acc(probs_neg, y)
+        precision = self.test_precision_neg(probs_neg, y)
+        recall = self.test_recall_neg(probs_neg, y)
+        f1 = self.test_f1_neg(probs_neg, y)
+
+        self.log("test/accuracy", accuracy, on_step=False, on_epoch=True)
+        self.log("test/precision_neg", precision, on_step=False, on_epoch=True)
+        self.log("test/recall_neg", recall, on_step=False, on_epoch=True)
+        self.log("test/f1_neg", f1, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
         opt_cfg = self.cfg.train.optimizer
