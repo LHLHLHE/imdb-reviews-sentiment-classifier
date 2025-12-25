@@ -128,7 +128,8 @@ uv run python -m reviews_classifier.commands preprocess_data
 ### Обучение
 
 Перед запуском обучения необходимо поднять `MLFlow` по адресу `127.0.0.1:8080`(или на любом другом,
-но тогда надо изменить параметр `tracking_uri` в `configs/logging/logging.yaml`)
+но тогда надо изменить параметр `tracking_uri` в `configs/logging/logging.yaml`) в режиме
+`--serve-artifacts`
 
 Есть 2 варианта обучения:
 
