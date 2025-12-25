@@ -1,0 +1,15 @@
+train_data_path: data/train.jsonl
+test_data_path: data/test.jsonl
+
+preprocess:
+  processed_train_data_path: processed_data/train.jsonl
+  processed_test_data_path: processed_data/test.jsonl
+
+  text_field: review
+  label_field: label
+
+  lowercase: true
+  strip_html: true
+  normalize_whitespace: true
+
+  min_chars: 4
