@@ -144,3 +144,5 @@ uv run python -m reviews_classifier.commands train baseline
 ```
 uv run python -m reviews_classifier.commands train bert
 ```
+
+Для преждевременной остановки обучения используйте комбинацию `Ctrl+C`.
