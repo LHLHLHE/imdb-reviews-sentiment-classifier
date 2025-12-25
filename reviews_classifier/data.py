@@ -52,14 +52,14 @@ class JsonlBertDataset(Dataset):
         return len(self.texts)
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        enc = self.tokenizer(
+        encoded = self.tokenizer(
             self.texts[idx],
             truncation=True,
             max_length=self.max_length,
             padding="max_length",
             return_tensors="pt",
         )
-        item = {k: v.squeeze(0) for k, v in enc.items()}
+        item = {key: value.squeeze(0) for key, value in encoded.items()}
         if self.labels is not None:
             item["labels"] = torch.tensor(int(self.labels[idx]), dtype=torch.long)
         return item
@@ -137,7 +137,7 @@ class ImdbReviewsDataModule(L.LightningDataModule):
                 raise ValueError("train_path is required for stage='fit'")
 
             texts, labels = read_jsonl(self.train_path, self.text_field, self.label_field)
-            x_tr, x_val, y_tr, y_val = train_test_split(
+            train_texts, val_texts, train_labels, val_labels = train_test_split(
                 texts,
                 labels,
                 test_size=self.split.val_size,
@@ -145,14 +145,18 @@ class ImdbReviewsDataModule(L.LightningDataModule):
                 shuffle=self.split.shuffle,
                 stratify=labels,
             )
-            self.train_dataset = JsonlBertDataset(x_tr, y_tr, self.tokenizer, self.max_length)
-            self.val_dataset = JsonlBertDataset(x_val, y_val, self.tokenizer, self.max_length)
+            self.train_dataset = JsonlBertDataset(
+                train_texts, train_labels, self.tokenizer, self.max_length
+            )
+            self.val_dataset = JsonlBertDataset(
+                val_texts, val_labels, self.tokenizer, self.max_length
+            )
         elif stage == "validate":
             if self.train_path is None:
                 raise ValueError("train_path is required for stage='validate'")
 
             texts, labels = read_jsonl(self.train_path, self.text_field, self.label_field)
-            _, x_val, _, y_val = train_test_split(
+            _, val_texts, _, val_labels = train_test_split(
                 texts,
                 labels,
                 test_size=self.split.val_size,
@@ -160,7 +164,9 @@ class ImdbReviewsDataModule(L.LightningDataModule):
                 shuffle=self.split.shuffle,
                 stratify=labels,
             )
-            self.val_dataset = JsonlBertDataset(x_val, y_val, self.tokenizer, self.max_length)
+            self.val_dataset = JsonlBertDataset(
+                val_texts, val_labels, self.tokenizer, self.max_length
+            )
         elif stage == "test":
             if self.test_path is None:
                 raise ValueError("test_path is required for stage='test'")

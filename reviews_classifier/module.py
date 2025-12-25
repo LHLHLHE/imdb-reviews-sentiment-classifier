@@ -15,12 +15,12 @@ class BertSentimentModule(L.LightningModule):
         self.head = nn.Linear(self.bert.config.hidden_size, cfg.model.num_classes)
         self.loss_fn = nn.CrossEntropyLoss()
 
-        for p in self.bert.parameters():
-            p.requires_grad = False
+        for param in self.bert.parameters():
+            param.requires_grad = False
 
         for layer in self.bert.encoder.layer[-4:]:
-            for p in layer.parameters():
-                p.requires_grad = True
+            for param in layer.parameters():
+                param.requires_grad = True
 
         self.train_acc = BinaryAccuracy()
 
@@ -45,26 +45,26 @@ class BertSentimentModule(L.LightningModule):
         logits = self(batch["input_ids"], batch["attention_mask"])
         loss = self.loss_fn(logits, batch["labels"])
         probs_neg = torch.softmax(logits, dim=-1)[:, 1]
-        y = batch["labels"]
-        return loss, probs_neg, y
+        labels = batch["labels"]
+        return loss, probs_neg, labels
 
     def on_fit_start(self) -> None:
         self.train()
 
     def training_step(self, batch, batch_idx):
-        loss, probs_neg, y = self._shared_step(batch)
-        accuracy = self.train_acc(probs_neg, y)
+        loss, probs_neg, labels = self._shared_step(batch)
+        accuracy = self.train_acc(probs_neg, labels)
 
         self.log("train/loss", loss, on_step=True, on_epoch=False, prog_bar=True)
         self.log("train/accuracy", accuracy, on_step=True, on_epoch=False, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss, probs_neg, y = self._shared_step(batch)
-        accuracy = self.val_acc(probs_neg, y)
-        precision = self.val_precision_neg(probs_neg, y)
-        recall = self.val_recall_neg(probs_neg, y)
-        f1 = self.val_f1_neg(probs_neg, y)
+        loss, probs_neg, labels = self._shared_step(batch)
+        accuracy = self.val_acc(probs_neg, labels)
+        precision = self.val_precision_neg(probs_neg, labels)
+        recall = self.val_recall_neg(probs_neg, labels)
+        f1 = self.val_f1_neg(probs_neg, labels)
 
         self.log("val/loss", loss, on_step=False, on_epoch=True)
         self.log("val/accuracy", accuracy, on_step=False, on_epoch=True)
@@ -73,11 +73,11 @@ class BertSentimentModule(L.LightningModule):
         self.log("val/f1_neg", f1, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
-        _, probs_neg, y = self._shared_step(batch)
-        accuracy = self.test_acc(probs_neg, y)
-        precision = self.test_precision_neg(probs_neg, y)
-        recall = self.test_recall_neg(probs_neg, y)
-        f1 = self.test_f1_neg(probs_neg, y)
+        _, probs_neg, labels = self._shared_step(batch)
+        accuracy = self.test_acc(probs_neg, labels)
+        precision = self.test_precision_neg(probs_neg, labels)
+        recall = self.test_recall_neg(probs_neg, labels)
+        f1 = self.test_f1_neg(probs_neg, labels)
 
         self.log("test/accuracy", accuracy, on_step=False, on_epoch=True)
         self.log("test/precision_neg", precision, on_step=False, on_epoch=True)

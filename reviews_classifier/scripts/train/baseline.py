@@ -64,15 +64,15 @@ def _train(cfg: DictConfig) -> None:
         )
         mlflow.set_tag("git_commit", commit)
 
-        X_text, y = read_jsonl(train_path, text_key, label_key)
+        texts, labels = read_jsonl(train_path, text_key, label_key)
 
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_text,
-            y,
+        train_texts, val_texts, train_labels, val_labels = train_test_split(
+            texts,
+            labels,
             test_size=split_cfg.val_size,
             random_state=split_cfg.random_state,
             shuffle=split_cfg.shuffle,
-            stratify=y,
+            stratify=labels,
         )
 
         tfidf = TfidfVectorizer()
@@ -80,26 +80,26 @@ def _train(cfg: DictConfig) -> None:
             C=model_cfg.C, max_iter=model_cfg.max_iter, class_weight=model_cfg.class_weight
         )
         pipe = Pipeline([("tfidf", tfidf), ("logreg", logreg)])
-        pipe.fit(X_train, y_train)
+        pipe.fit(train_texts, train_labels)
 
-        y_train_pred = pipe.predict(X_train)
-        y_val_pred = pipe.predict(X_val)
+        train_preds = pipe.predict(train_texts)
+        val_preds = pipe.predict(val_texts)
         metrics = {
-            "train/accuracy": accuracy_score(y_train, y_train_pred),
-            "val/accuracy": accuracy_score(y_val, y_val_pred),
-            "val/precision_neg": precision_score(y_val, y_val_pred, pos_label=1),
-            "val/recall_neg": recall_score(y_val, y_val_pred, pos_label=1),
-            "val/f1_neg": f1_score(y_val, y_val_pred, pos_label=1),
+            "train/accuracy": accuracy_score(train_labels, train_preds),
+            "val/accuracy": accuracy_score(val_labels, val_preds),
+            "val/precision_neg": precision_score(val_labels, val_preds, pos_label=1),
+            "val/recall_neg": recall_score(val_labels, val_preds, pos_label=1),
+            "val/f1_neg": f1_score(val_labels, val_preds, pos_label=1),
         }
         mlflow.log_metrics(metrics)
 
-        X_test, y_test = read_jsonl(test_path, text_key, label_key)
-        y_test_pred = pipe.predict(X_test)
+        test_texts, test_labels = read_jsonl(test_path, text_key, label_key)
+        test_preds = pipe.predict(test_texts)
         test_metrics = {
-            "test/accuracy": accuracy_score(y_test, y_test_pred),
-            "test/precision_neg": precision_score(y_test, y_test_pred, pos_label=1),
-            "test/recall_neg": recall_score(y_test, y_test_pred, pos_label=1),
-            "test/f1_neg": f1_score(y_test, y_test_pred, pos_label=1),
+            "test/accuracy": accuracy_score(test_labels, test_preds),
+            "test/precision_neg": precision_score(test_labels, test_preds, pos_label=1),
+            "test/recall_neg": recall_score(test_labels, test_preds, pos_label=1),
+            "test/f1_neg": f1_score(test_labels, test_preds, pos_label=1),
         }
         mlflow.log_metrics(test_metrics)
 

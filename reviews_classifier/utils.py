@@ -1,5 +1,5 @@
 def check_data_exists(train_path, test_path):
-    missing = [p for p in (train_path, test_path) if not p.exists()]
+    missing = [path for path in (train_path, test_path) if not path.exists()]
     if missing:
-        return False, ", ".join(str(p) for p in missing)
+        return False, ", ".join(str(path) for path in missing)
     return True, ""
